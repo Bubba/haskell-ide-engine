@@ -180,6 +180,9 @@ setTypecheckedModule uri =
     case mtm of
       Nothing -> do
         debugm $ "setTypecheckedModule: Didn't get typechecked module for: " ++ show fp
+        
+        failModule fp (T.unlines errs)
+
         return $ IdeResultOk (diags,errs)
       Just tm -> do
         typm <- GM.unGmlT $ genTypeMap tm
