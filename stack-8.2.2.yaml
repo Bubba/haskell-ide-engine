@@ -46,3 +46,4 @@ nix:
   packages: [ icu libcxx zlib ]
 
 concurrent-tests: false
+dump-logs: all
