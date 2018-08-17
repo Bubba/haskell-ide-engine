@@ -18,6 +18,12 @@ cache:
 build_script:
 - cmd: stack --stack-yaml=stack-%GHCVER%.yaml install
 test: off
-artifacts:
-- path: .stack-work\install\**\bin\hie.exe
-- path: .stack-work\install\**\bin\hie-wrapper.exe
+deploy:
+   description: ''
+   provider: GitHub
+   auth_token:
+     secure: 5isfeayPG7GNZxoCyMml92CfsG1jwu0C7n+O0dtLdVMOc9ZTvIYfWDXb5j/iWlCw
+   artifacts: .stack-work\install\**\bin\hie.exe
+   on:
+     branch: master
+     appveyor_repo_tag: true
