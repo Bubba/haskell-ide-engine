@@ -10,6 +10,7 @@ import           Haskell.Ide.Engine.PluginUtils
 import           Language.Haskell.LSP.Types
 import           System.Directory
 import           TestUtils
+import           UnitUtils
 
 import           Test.Hspec
 

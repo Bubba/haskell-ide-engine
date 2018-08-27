@@ -22,6 +22,7 @@ import           Haskell.Ide.Engine.PluginUtils
 import           Haskell.Ide.Engine.Types
 import           Language.Haskell.LSP.Types hiding (error)
 import           TestUtils
+import           UnitUtils
 import           System.Directory
 import           System.FilePath
 

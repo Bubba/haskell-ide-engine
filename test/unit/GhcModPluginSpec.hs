@@ -20,6 +20,7 @@ import           System.Directory
 import           TestUtils
 
 import           Test.Hspec
+import           UnitUtils
 
 -- ---------------------------------------------------------------------
 

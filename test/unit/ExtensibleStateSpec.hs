@@ -6,7 +6,7 @@ import           Data.Typeable
 import           Haskell.Ide.Engine.MonadTypes
 import           Haskell.Ide.Engine.MonadFunctions
 import           Haskell.Ide.Engine.PluginDescriptor
-import           TestUtils
+import           UnitUtils
 
 import           Test.Hspec
 

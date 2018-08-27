@@ -7,7 +7,7 @@ import           Language.Haskell.LSP.Types
 import           System.Directory
 import           Haskell.Ide.Engine.Plugin.Brittany
 import           Haskell.Ide.Engine.MonadTypes
-import           TestUtils
+import           UnitUtils
 import           Test.Hspec
 
 main :: IO ()

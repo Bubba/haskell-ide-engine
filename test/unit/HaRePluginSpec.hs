@@ -16,6 +16,7 @@ import           Language.Haskell.LSP.Types     ( Location(..)
 import           System.Directory
 import           System.FilePath
 import           TestUtils
+import           UnitUtils
 
 import           Test.Hspec
 

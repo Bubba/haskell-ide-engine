@@ -1,14 +1,9 @@
 {-# LANGUAGE CPP #-}
 module TestUtils
   (
-    testOptions
-  , cdAndDo
+    cdAndDo
   , withFileLogging
   , setupStackFiles
-  , testCommand
-  , runSingleReq
-  , makeRequest
-  , runIGM
   , ghc84
   , hieCommand
   , hieCommandVomit
@@ -18,61 +13,21 @@ module TestUtils
 import           Control.Exception
 import           Control.Monad
 import           Data.Aeson.Types (typeMismatch)
-import           Data.Default
 import           Data.Text (pack)
-import           Data.Typeable
 import           Data.Yaml
-import qualified Data.Map as Map
-import qualified GhcMod.Monad as GM
-import qualified GhcMod.Types as GM
 import qualified Language.Haskell.LSP.Core as Core
-import           Haskell.Ide.Engine.Monad
-import           Haskell.Ide.Engine.MonadTypes
-import           Haskell.Ide.Engine.PluginDescriptor
 import           System.Directory
 import           System.FilePath
 import qualified System.Log.Logger as L
 
-import           Test.Hspec
 
 -- ---------------------------------------------------------------------
-
-testOptions :: GM.Options
-testOptions = GM.defaultOptions {
-    GM.optOutput     = GM.OutputOpts {
-      GM.ooptLogLevel       = GM.GmError
-      -- GM.ooptLogLevel       = GM.GmVomit
-    , GM.ooptStyle          = GM.PlainStyle
-    , GM.ooptLineSeparator  = GM.LineSeparator "\0"
-    , GM.ooptLinePrefix     = Nothing
-    }
-
-    }
 
 cdAndDo :: FilePath -> IO a -> IO a
 cdAndDo path fn = do
   old <- getCurrentDirectory
   bracket (setCurrentDirectory path) (\_ -> setCurrentDirectory old)
           $ const fn
-
-
-testCommand :: (ToJSON a, Typeable b, ToJSON b, Show b, Eq b) => IdePlugins -> IdeGhcM (IdeResult b) -> PluginId -> CommandName -> a -> IdeResult b -> IO ()
-testCommand testPlugins act plugin cmd arg res = do
-  (newApiRes, oldApiRes) <- runIGM testPlugins $ do
-    new <- act
-    old <- makeRequest plugin cmd arg
-    return (new, old)
-  newApiRes `shouldBe` res
-  fmap fromDynJSON oldApiRes `shouldBe` fmap Just res
-
-runSingleReq :: ToJSON a => IdePlugins -> PluginId -> CommandName -> a -> IO (IdeResult DynamicJSON)
-runSingleReq testPlugins plugin com arg = runIGM testPlugins (makeRequest plugin com arg)
-
-makeRequest :: ToJSON a => PluginId -> CommandName -> a -> IdeGhcM (IdeResult DynamicJSON)
-makeRequest plugin com arg = runPluginCommand plugin com (toJSON arg)
-
-runIGM :: IdePlugins -> IdeGhcM a -> IO a
-runIGM testPlugins = runIdeGhcM testOptions def (IdeState emptyModuleCache Map.empty testPlugins Map.empty Nothing 0)
 
 withFileLogging :: FilePath -> IO a -> IO a
 withFileLogging logFile f = do
@@ -109,6 +64,7 @@ files =
    , "./test/testdata/redundantImportTest/"
    , "./test/testdata/completion/"
    , "./test/testdata/definition/"
+   , "./bench/sample/"
   ]
 
 ghc84 :: Bool

@@ -10,7 +10,7 @@ import           Haskell.Ide.Engine.Plugin.Hoogle
 import           Hoogle
 import           System.Directory
 import           Test.Hspec
-import           TestUtils
+import           UnitUtils
 
 -- ---------------------------------------------------------------------
 
