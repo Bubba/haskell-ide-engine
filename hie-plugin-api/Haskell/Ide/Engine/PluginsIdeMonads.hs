@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | IdeGhcM and associated types
 module Haskell.Ide.Engine.PluginsIdeMonads
@@ -147,7 +148,7 @@ mkLspCmdId plid cn = do
 
 -- ---------------------------------------------------------------------
 
-type CodeActionProvider =  PluginId
+type CodeActionProvider config = config -> PluginId
                         -> VersionedTextDocumentIdentifier
                         -> Maybe FilePath -- ^ Project root directory
                         -> Range
@@ -155,12 +156,12 @@ type CodeActionProvider =  PluginId
                         -> IdeM (IdeResult [CodeAction])
 
 -- type DiagnosticProviderFunc = DiagnosticTrigger -> Uri -> IdeM (IdeResponse (Map.Map Uri (S.Set Diagnostic)))
-type DiagnosticProviderFunc
-  = DiagnosticTrigger -> Uri -> IdeGhcM (IdeResult (Map.Map Uri (S.Set Diagnostic)))
+type DiagnosticProviderFunc config
+  = config -> DiagnosticTrigger -> Uri -> IdeGhcM (IdeResult (Map.Map Uri (S.Set Diagnostic)))
 
-data DiagnosticProvider = DiagnosticProvider
+data DiagnosticProvider config = DiagnosticProvider
      { dpTrigger :: S.Set DiagnosticTrigger -- AZ:should this be a NonEmptyList?
-     , dpFunc    :: DiagnosticProviderFunc
+     , dpFunc    :: DiagnosticProviderFunc config 
      }
 
 data DiagnosticTrigger = DiagnosticOnOpen
@@ -168,28 +169,28 @@ data DiagnosticTrigger = DiagnosticOnOpen
                        | DiagnosticOnSave
                        deriving (Show,Ord,Eq)
 
-type HoverProvider = Uri -> Position -> IdeM (IdeResult [Hover])
+type HoverProvider config = config -> Uri -> Position -> IdeM (IdeResult [Hover])
 
-type SymbolProvider = Uri -> IdeDeferM (IdeResult [DocumentSymbol])
+type SymbolProvider config = config -> Uri -> IdeDeferM (IdeResult [DocumentSymbol])
 
-data PluginDescriptor =
+data PluginDescriptor config = FromJSON config =>
   PluginDescriptor { pluginId                 :: PluginId
                    , pluginName               :: T.Text
                    , pluginDesc               :: T.Text
                    , pluginCommands           :: [PluginCommand]
-                   , pluginCodeActionProvider :: Maybe CodeActionProvider
-                   , pluginDiagnosticProvider :: Maybe DiagnosticProvider
-                   , pluginHoverProvider      :: Maybe HoverProvider
-                   , pluginSymbolProvider     :: Maybe SymbolProvider
-                   } deriving (Generic)
+                   , pluginCodeActionProvider :: Maybe (CodeActionProvider config)
+                   , pluginDiagnosticProvider :: Maybe (DiagnosticProvider config)
+                   , pluginHoverProvider      :: Maybe (HoverProvider config)
+                   , pluginSymbolProvider     :: Maybe (SymbolProvider config)
+                   }
 
 instance Show PluginCommand where
   show (PluginCommand name _ _) = "PluginCommand { name = " ++ T.unpack name ++ " }"
 
 -- | a Description of the available commands stored in IdeGhcM
 newtype IdePlugins = IdePlugins
-  { ipMap :: Map.Map PluginId PluginDescriptor
-  } deriving (Generic)
+  { ipMap :: forall a. Map.Map PluginId (PluginDescriptor a)
+  }
 
 -- TODO:AZ this is a defective instance, do we actually need it?
 -- Perhaps rather make a separate type explicitly for this purpose.

@@ -23,7 +23,10 @@ import qualified Haskell.Ide.Engine.Plugin.Hoogle as Hoogle
 import           System.Directory
 import           System.IO
 
-hsimportDescriptor :: PluginId -> PluginDescriptor
+data HsImportConfig = HsImportConfig { formatImport :: Bool }
+  deriving (Generics.Generic, ToJSON, FromJSON)
+
+hsimportDescriptor :: PluginId -> PluginDescriptor HsImportConfig
 hsimportDescriptor plId = PluginDescriptor
   { pluginId = plId
   , pluginName = "HsImport"

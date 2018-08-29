@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RankNTypes           #-}
 -- | A data structure to define a plugin.
 -- Allows description of a plugin and the commands it provides
 
@@ -25,7 +26,7 @@ import           Data.Typeable
 import           Haskell.Ide.Engine.IdeFunctions
 import           Haskell.Ide.Engine.MonadTypes
 
-pluginDescToIdePlugins :: [PluginDescriptor] -> IdePlugins
+pluginDescToIdePlugins :: (forall a. [PluginDescriptor a]) -> IdePlugins
 pluginDescToIdePlugins plugins = IdePlugins $ Map.fromList $ map (\p -> (pluginId p, p)) plugins
 
 type DynamicJSON = CD.ConstrainedDynamic ToJSON
