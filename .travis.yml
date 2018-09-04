@@ -34,9 +34,9 @@ before_install:
       travis_retry curl -sSL https://www.stackage.org/stack/${TRAVIS_OS_NAME}-x86_64 \
         | tar xz --strip-components=1 -C ~/.local/bin --include   '*/stack'
     fi
- - travis_retry stack --no-terminal --install-ghc $ARGS setup
+  - travis_retry stack --no-terminal --install-ghc $ARGS setup
 
 script:
- - stack build --test $ARGS
- - stack exec hoogle generate $ARGS
- - stack test $ARGS
+  - stack build --test $ARGS
+  - stack exec hoogle generate $ARGS
+  - stack test $ARGS
