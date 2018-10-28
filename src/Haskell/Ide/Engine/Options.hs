@@ -17,6 +17,7 @@ data GlobalOpts = GlobalOpts
   , optEkgPort       :: Int
   , optCaptureFile   :: Maybe FilePath
   , optExamplePlugin :: Bool
+  , optHoogleDB      :: Maybe FilePath
   } deriving (Show)
 
 globalOptsParser :: Parser GlobalOpts
@@ -65,3 +66,8 @@ globalOptsParser = GlobalOpts
   <*> switch
        ( long "example"
        <> help "Enable Example2 plugin. Useful for developers only")
+  <*> optional (strOption
+       ( long "hoogle-db"
+      <> metavar "HOOGLEDB"
+      <> help "Override default Hoogle database path"
+       ))
