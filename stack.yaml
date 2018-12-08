@@ -26,6 +26,8 @@ extra-deps:
 - syz-0.2.0.0
 - temporary-1.2.1.1
 - yaml-0.8.32
+- github: LeastAuthority/hspec-jenkins
+  commit: master
 
 
 
@@ -35,18 +37,6 @@ flags:
     pedantic: true
   hie-plugin-api:
     pedantic: true
-  # ekg-core:
-  #   allow-newer: true
-  # ekg-json:
-  #   allow-newer: true
-  # ekg-wai:
-  #   allow-newer: true
-  # base:
-  #   allow-newer: true
-  # process:
-  #   allow-newer: true
-
-# allow-newer: true
 
 nix:
   packages: [ icu libcxx zlib ]

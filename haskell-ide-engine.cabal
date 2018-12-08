@@ -170,9 +170,11 @@ test-suite unit-test
                      , hie-plugin-api
                      , hoogle > 5.0.11
                      , hspec
+                     , hspec-jenkins
                      , quickcheck-instances
                      , stm
                      , text
+                     , time
                      , unordered-containers
 
                      -- remove these once hie-test-utils is reinstated
