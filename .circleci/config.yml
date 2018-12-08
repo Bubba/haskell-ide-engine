@@ -24,7 +24,7 @@ defaults: &defaults
         keys: "investigation-cache"
     - run:
         name: "Profile unit tests"
-        command: stack test --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
+        command: stack test -j2 --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
     - store_artifacts:
         path: test-logs
     - store_artifacts:
