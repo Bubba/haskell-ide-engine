@@ -27,7 +27,7 @@ defaults: &defaults
         command: stack install happy
     - run:
         name: "Profile unit tests"
-        command: stack test -j2 --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
+        command: stack test -j4 --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
     - store_artifacts:
         path: test-logs
     - store_artifacts:
