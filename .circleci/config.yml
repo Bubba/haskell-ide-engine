@@ -23,6 +23,9 @@ defaults: &defaults
     - restore_cache:
         keys: "investigation-cache"
     - run:
+        name: "install happy"
+        command: stack install happy
+    - run:
         name: "Profile unit tests"
         command: stack test -j2 --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
     - store_artifacts:
