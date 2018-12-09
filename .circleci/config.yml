@@ -21,7 +21,11 @@ defaults: &defaults
         command: find . -name "*.cabal" | grep -v "stack-work" | xargs cat > all-cabal.txt
 
     - restore_cache:
-        keys: "investigation-cache"
+        keys:
+          - "investigation-cache"
+          - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}-{{ checksum "all-cabal.txt" }}
+          - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}
+          - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "resolver.txt" }}
     - run:
         name: "install happy"
         command: stack install happy
