@@ -30,8 +30,11 @@ defaults: &defaults
         name: "install happy"
         command: stack install happy
     - run:
-        name: "Profile unit tests"
-        command: stack test -j2 --profile :unit-test --test-arguments "-m \"runs the check command\" +RTS -p"
+        name: "Build unit tests"
+        command: stack build --test --no-run-tests -j2 :unit-test --test-arguments "-m \"runs the check command\""
+    - run:
+        name: "Run unit tests"
+        command: stack test :unit-test --test-arguments "-m \"runs the check command\""
     - store_artifacts:
         path: test-logs
     - store_artifacts:
