@@ -137,6 +137,27 @@ executable hie-wrapper
      ghc-options:      -Werror
   default-language:    Haskell2010
 
+executable unit-test-inner
+  hs-source-dirs:     test/unit
+                    , test/utils
+  main-is:            Inner/Main.hs
+  other-modules:      TestUtils
+  build-depends:      haskell-ide-engine, filepath, base, directory, haskell-lsp
+                     , data-default
+                     , hie-plugin-api
+                     , ghc-mod-core
+                     , hslogger
+                     , yaml
+                     , hspec
+                     , stm
+                     , text
+                     , time
+                     , unordered-containers
+                     , aeson
+                     , containers
+
+  default-language: Haskell2010
+
 
 test-suite unit-test
   type:                exitcode-stdio-1.0
@@ -176,6 +197,7 @@ test-suite unit-test
                      , text
                      , time
                      , unordered-containers
+                     , process
 
                      -- remove these once hie-test-utils is reinstated
                      , data-default

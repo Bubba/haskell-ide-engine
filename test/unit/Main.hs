@@ -2,22 +2,25 @@ module Main where
 
 import Test.Hspec.Runner
 import TestUtils
-import qualified Spec
+-- import qualified Spec
 -- import Test.Hspec.Formatters.Jenkins (xmlFormatter)
 import           Test.Hspec
 import           Control.Exception
 import           Data.Time.Clock
+import           System.Process
 
 -- ---------------------------------------------------------------------
 
 main :: IO ()
 main = do
   setupStackFiles
+  
   let config = defaultConfig { configPrintCpuTime = True }
                             --  , configFormatter = Just xmlFormatter
                             --  , configOutputFile = Right "test-logs/unit-test.xml"
                             --  }
-  withFileLogging "main.log" $ hspecWith config $ around_ timeIt Spec.spec
+  withFileLogging "main.log" $ hspecWith config $ around_ timeIt $
+    describe "inner" $ it "inner" $ system "stack exec unit-test-inner" >> return ()
   where timeIt f = bracket getCurrentTime
                            (\start -> do end <- getCurrentTime
                                          putStrLn $ "\ttest-duration: " ++ show (diffUTCTime end start))
