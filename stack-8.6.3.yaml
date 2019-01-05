@@ -1,4 +1,4 @@
-resolver: nightly-2018-12-31 # GHC 8.6.3
+resolver: lts-13.0
 packages:
 - .
 - hie-plugin-api
@@ -19,12 +19,10 @@ extra-deps:
 - hsimport-0.8.6
 - monad-memo-0.4.1
 - multistate-0.8.0.1
-- optparse-simple-0.1.0
 - syz-0.2.0.0
 - temporary-1.2.1.1
 - yaml-0.8.32
-- github: LeastAuthority/hspec-jenkins
-  commit: master
+
 
 flags:
   haskell-ide-engine:

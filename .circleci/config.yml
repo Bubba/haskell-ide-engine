@@ -47,6 +47,7 @@ defaults: &defaults
           - ~/build/.stack-work
           - ~/build/hie-plugin-api/.stack-work
           - ~/build/submodules/HaRe/.stack-work
+          - ~/build/submodules/brittany/.stack-work
           - ~/build/submodules/ghc-mod/core/.stack-work
           - ~/build/submodules/ghc-mod/.stack-work
           - ~/build/submodules/haskell-lsp/.stack-work
@@ -180,6 +181,11 @@ jobs:
   #     - STACK_FILE: "stack-8.6.2.yaml"
   #   <<: *defaults
 
+  # ghc-8.6.3:
+  #  environment:
+  #   - STACK_FILE: "stack-8.6.3.yaml"
+  #  <<: *defaults
+
   ghc-nightly:
     environment:
       - STACK_FILE: "stack.yaml"
@@ -230,5 +236,6 @@ workflows:
       - ghc-8.4.4
       - ghc-8.6.1
       - ghc-8.6.2
+      - ghc-8.6.3
       - ghc-nightly
       - cabal
