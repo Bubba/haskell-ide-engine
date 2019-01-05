@@ -34,7 +34,7 @@ defaults: &defaults
         command: stack build --test --no-run-tests -j2 :unit-test --test-arguments "-m \"runs the check command\""
     - run:
         name: "Run unit tests"
-        command: stack test :unit-test --test-arguments "-m \"runs the check command\""
+        command: stack test :unit-test
     - store_artifacts:
         path: test-logs
     - store_artifacts:
