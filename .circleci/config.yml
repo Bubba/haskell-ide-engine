@@ -181,15 +181,15 @@ jobs:
   #     - STACK_FILE: "stack-8.6.2.yaml"
   #   <<: *defaults
 
-  # ghc-8.6.3:
-  #  environment:
-  #   - STACK_FILE: "stack-8.6.3.yaml"
-  #  <<: *defaults
+  ghc-8.6.3:
+   environment:
+    - STACK_FILE: "stack-8.6.3.yaml"
+   <<: *defaults
 
-  ghc-nightly:
-    environment:
-      - STACK_FILE: "stack.yaml"
-    <<: *defaults
+#   ghc-nightly:
+#     environment:
+#       - STACK_FILE: "stack.yaml"
+#     <<: *defaults
 
   # cabal:
   #   working_directory: ~/build
@@ -236,6 +236,6 @@ workflows:
       # - ghc-8.4.4
       # - ghc-8.6.1
       # - ghc-8.6.2
-      # - ghc-8.6.3
-      - ghc-nightly
+      - ghc-8.6.3
+    #   - ghc-nightly
       # - cabal
