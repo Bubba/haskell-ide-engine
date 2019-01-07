@@ -22,7 +22,7 @@ defaults: &defaults
 
     - restore_cache:
         keys:
-          - "investigation-cache"
+          - "investigation-cache-0"
           - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}-{{ checksum "all-cabal.txt" }}
           - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}
           - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "resolver.txt" }}
@@ -40,7 +40,7 @@ defaults: &defaults
     - store_artifacts:
         path: unit-test.prof
     - save_cache:
-        key: "investigation-cache"
+        key: "investigation-cache-0"
         paths:
           - ~/.stack
           - ~/.cache
