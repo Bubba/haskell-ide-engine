@@ -92,14 +92,14 @@ defaults: &defaults
     - save_cache:
         key: stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}-{{ checksum "all-cabal.txt" }}
         paths: *cache_paths
+    
+    - persist_to_workspace:
+        root: .stack-work
+        paths:
+          - install/*/*/*/
 
 version: 2
 jobs:
-  ghc-8.0.2:
-    environment:
-      - STACK_FILE: "stack-8.0.2.yaml"
-    <<: *defaults
-
   ghc-8.2.1:
     environment:
       - STACK_FILE: "stack-8.2.1.yaml"
@@ -178,6 +178,24 @@ jobs:
           paths:
             - ~/.cabal
 
+  shakefile:
+    docker:
+      - image: fpco/stack-build
+    steps:
+      - checkout # don't checkout submodules: Shakefile.hs should take care of that
+      - attach_workspace:
+          at: .stack-work
+      - run: ./Shakefile.hs build-all
+      - run: hie-wrapper --version
+      - run: hie-8.6.3 --version
+      - run: hie-8.6.2 --version
+      - run: hie-8.6.1 --version
+      - run: hie-8.4.4 --version
+      - run: hie-8.4.3 --version
+      - run: hie-8.4.2 --version
+      - run: hie-8.2.3 --version
+      - run: hie-8.2.2 --version
+
 
 workflows:
   version: 2
@@ -193,3 +211,11 @@ workflows:
       - ghc-8.6.3
       - ghc-nightly
       - cabal
+      - shakefile:
+          requires:
+            - ghc-8.2.1
+            - ghc-8.2.2
+            - ghc-8.4.2
+            - ghc-8.4.3
+            - ghc-8.4.4
+            - ghc-8.6.1
