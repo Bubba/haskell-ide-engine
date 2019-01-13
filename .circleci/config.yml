@@ -93,6 +93,8 @@ defaults: &defaults
         key: stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}-{{ checksum "all-cabal.txt" }}
         paths: *cache_paths
     
+    - run: find .stack-work/install/*/ -maxdepth 3 -ls
+    
     - persist_to_workspace:
         root: .stack-work
         paths:
@@ -219,3 +221,5 @@ workflows:
             - ghc-8.4.3
             - ghc-8.4.4
             - ghc-8.6.1
+            - ghc-8.6.2
+            - ghc-8.6.3
