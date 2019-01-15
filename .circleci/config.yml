@@ -72,6 +72,11 @@ defaults: &defaults
           - ~/build/submodules/ghc-mod/.stack-work
           - ~/build/submodules/haskell-lsp/.stack-work
           - ~/build/submodules/cabal-helper/.stack-work
+    
+    - persist_to_workspace:
+        root: .stack-work
+        paths:
+          - install/*/*/*/
 
     - run:
         name: Test
@@ -94,11 +99,6 @@ defaults: &defaults
         paths: *cache_paths
     
     - run: find .stack-work/install/*/ -maxdepth 3 -ls
-    
-    - persist_to_workspace:
-        root: .stack-work
-        paths:
-          - install/*/*/*/
 
 version: 2
 jobs:
