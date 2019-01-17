@@ -79,7 +79,7 @@ defaults: &defaults
           - precompiled/*/*/
           - programs/*/
     
-    - run: find .stack-work/install/*/ -maxdepth 3 -ls
+    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Test
