@@ -74,9 +74,12 @@ defaults: &defaults
           - ~/build/submodules/cabal-helper/.stack-work
     
     - persist_to_workspace:
-        root: .stack-work
+        root: ~/.stack
         paths:
-          - install/*/*/*/
+          - precompiled/*/*/
+          - programs/*/
+    
+    - run: find .stack-work/install/*/ -maxdepth 3 -ls
 
     - run:
         name: Test
@@ -97,8 +100,6 @@ defaults: &defaults
     - save_cache:
         key: stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}-{{ checksum "all-cabal.txt" }}
         paths: *cache_paths
-    
-    - run: find .stack-work/install/*/ -maxdepth 3 -ls
 
 version: 2
 jobs:
@@ -186,7 +187,7 @@ jobs:
     steps:
       - checkout # don't checkout submodules: Shakefile.hs should take care of that
       - attach_workspace:
-          at: .stack-work
+          at: ~/.stack
       - run: ./Shakefile.hs build-all
       - run: hie-wrapper --version
       - run: hie-8.6.3 --version
