@@ -74,10 +74,10 @@ defaults: &defaults
           - ~/build/submodules/cabal-helper/.stack-work
     
     - persist_to_workspace:
-        root: ~/.stack
+        root: ~/
         paths:
-          - precompiled/*/*/
-          - programs/*/
+          - .stack/precompiled/*/*/*/
+          - build/.stack-work/install/*/*/*/
     
     - run: find ~/.stack/ -maxdepth 4 -ls
 
@@ -182,12 +182,13 @@ jobs:
             - ~/.cabal
 
   shakefile:
+    working-directory: ~/build
     docker:
       - image: fpco/stack-build
     steps:
       - checkout # don't checkout submodules: Shakefile.hs should take care of that
       - attach_workspace:
-          at: ~/.stack
+          at: ~/
       - run: ./Shakefile.hs build-all
       - run: hie-wrapper --version
       - run: hie-8.6.3 --version
