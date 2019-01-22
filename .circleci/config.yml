@@ -46,6 +46,12 @@ defaults: &defaults
         name: Build Testsuite without running it
         command: stack -j 2 --stack-yaml=${STACK_FILE}  build --test --no-run-tests
 
+    - persist_to_workspace:
+        root: ~/
+        paths:
+          - .stack/precompiled/*/*/*/
+          - build/.stack-work/install/*/*/*/
+
     - store_artifacts:
         path: ~/.local/bin
         destination: bin
@@ -72,12 +78,6 @@ defaults: &defaults
           - ~/build/submodules/ghc-mod/.stack-work
           - ~/build/submodules/haskell-lsp/.stack-work
           - ~/build/submodules/cabal-helper/.stack-work
-    
-    - persist_to_workspace:
-        root: ~/
-        paths:
-          - .stack/precompiled/*/*/*/
-          - build/.stack-work/install/*/*/*/
     
     - run: find ~/.stack/ -maxdepth 4 -ls
 
