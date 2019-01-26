@@ -30,7 +30,7 @@ defaults: &defaults
     # since docker image comes with a bunch of stuff inside ~/.stack
     - run: 
         name: Remove unneeded stack caches
-        command: if [ $STACK_FILE != stack-8.4.3.yaml ] ; then rm -r ~/.stack/precompiled/*/ghc-8.4.3; fi 
+        command: if [ $STACK_FILE != stack-8.6.3.yaml ] && [ $STACK_FILE != stack.yaml ] ; then rm -r ~/.stack/precompiled/*/ghc-8.6.3; fi 
 
     - run:
         name: Stack setup
