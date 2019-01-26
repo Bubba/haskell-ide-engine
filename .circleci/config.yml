@@ -26,17 +26,23 @@ defaults: &defaults
           - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "stack-build.txt" }}
           - stack-cache-{{ .Environment.HIE_CACHE }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "resolver.txt" }}
 
+    # Needed to prevent persist_to_workspace duplicates
+    # since docker image comes with a bunch of stuff inside ~/.stack
+    - run: 
+        name: Remove unneeded stack caches
+        command: if [ $STACK_FILE != stack-8.4.3.yaml ] ; then rm -r ~/.stack/precompiled/*/ghc-8.4.3; fi 
+
     - run:
         name: Stack setup
         command: stack -j 2 --stack-yaml=${STACK_FILE} setup
-
-    - run:
-        name: Install happy
-        command: stack --stack-yaml=${STACK_FILE} install happy
+    
+    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Install Hoogle
         command: stack --stack-yaml=${STACK_FILE} install hoogle
+    
+    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Build (we need the exe for tests)
@@ -78,8 +84,6 @@ defaults: &defaults
           - ~/build/submodules/ghc-mod/.stack-work
           - ~/build/submodules/haskell-lsp/.stack-work
           - ~/build/submodules/cabal-helper/.stack-work
-    
-    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Test
