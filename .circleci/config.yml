@@ -35,14 +35,10 @@ defaults: &defaults
     - run:
         name: Stack setup
         command: stack -j 2 --stack-yaml=${STACK_FILE} setup
-    
-    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Install Hoogle
         command: stack --stack-yaml=${STACK_FILE} install hoogle
-    
-    - run: find ~/.stack/ -maxdepth 4 -ls
 
     - run:
         name: Build (we need the exe for tests)
@@ -50,13 +46,13 @@ defaults: &defaults
 
     - run:
         name: Build Testsuite without running it
-        command: stack -j 2 --stack-yaml=${STACK_FILE}  build --test --no-run-tests
+        command: stack -j 2 --stack-yaml=${STACK_FILE} build --test --no-run-tests
 
     - persist_to_workspace:
         root: ~/
         paths:
           - .stack/precompiled/*/*/*/
-          - build/.stack-work/install/*/*/*/
+          # - build/.stack-work/install/*/*/*/
 
     - store_artifacts:
         path: ~/.local/bin
