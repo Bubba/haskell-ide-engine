@@ -19,6 +19,8 @@ defaults: &defaults
     - run:
         name: Create a composite cabal file for changes detection
         command: find . -name "*.cabal" | grep -v -e "stack-work" -e "dist-newstyle" -e "submodules" -e "testdata" | sort | xargs cat > all-cabal.txt
+    
+    - run: rm -r ~/.stack
 
     - restore_cache:
         keys:
@@ -28,9 +30,9 @@ defaults: &defaults
 
     # Needed to prevent persist_to_workspace duplicates
     # since docker image comes with a bunch of stuff inside ~/.stack
-    - run: 
-        name: Remove unneeded stack caches
-        command: if [ $STACK_FILE != stack-8.6.3.yaml ] && [ $STACK_FILE != stack.yaml ] ; then rm -r ~/.stack/precompiled/*/ghc-8.6.3; fi 
+    # - run: 
+    #     name: Remove unneeded stack caches
+    #     command: ./.circleci/tidyCache.sh 
 
     - run:
         name: Stack setup
@@ -47,12 +49,15 @@ defaults: &defaults
     - run:
         name: Build Testsuite without running it
         command: stack -j 2 --stack-yaml=${STACK_FILE} build --test --no-run-tests
+    
+    - run: find ~/.stack/ -maxdepth 4 -ls
+    - run: find .stack-work -maxdepth 4 -ls
 
     - persist_to_workspace:
         root: ~/
         paths:
-          - .stack/precompiled/*/*/*/
-          # - build/.stack-work/install/*/*/*/
+          - .stack
+          - build/.stack-work/
 
     - store_artifacts:
         path: ~/.local/bin
