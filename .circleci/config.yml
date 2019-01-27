@@ -19,8 +19,6 @@ defaults: &defaults
     - run:
         name: Create a composite cabal file for changes detection
         command: find . -name "*.cabal" | grep -v -e "stack-work" -e "dist-newstyle" -e "submodules" -e "testdata" | sort | xargs cat > all-cabal.txt
-    
-    - run: rm -r ~/.stack
 
     - restore_cache:
         keys:
@@ -30,9 +28,9 @@ defaults: &defaults
 
     # Needed to prevent persist_to_workspace duplicates
     # since docker image comes with a bunch of stuff inside ~/.stack
-    # - run: 
-    #     name: Remove unneeded stack caches
-    #     command: ./.circleci/tidyCache.sh 
+    - run: 
+        name: Remove unneeded stack caches
+        command: ./.circleci/tidyCache.sh 
 
     - run:
         name: Stack setup
@@ -56,7 +54,9 @@ defaults: &defaults
     - persist_to_workspace:
         root: ~/
         paths:
-          - .stack
+          - .stack/precompiled
+          - .stack/programs
+          - .stack/loaded-snapshot-cache
           - build/.stack-work/
 
     - store_artifacts:
