@@ -34,19 +34,19 @@ defaults: &defaults
 
     - run:
         name: Stack setup
-        command: stack -j 2 --stack-yaml=${STACK_FILE} setup
+        command: stack -j2 --stack-yaml=${STACK_FILE} setup
 
     - run:
         name: Install Hoogle
-        command: stack --stack-yaml=${STACK_FILE} install hoogle
+        command: stack -j2 --stack-yaml=${STACK_FILE} install hoogle
 
     - run:
         name: Build (we need the exe for tests)
-        command: stack -j 2 --stack-yaml=${STACK_FILE} install
+        command: stack -j2 --stack-yaml=${STACK_FILE} install
 
     - run:
         name: Build Testsuite without running it
-        command: stack -j 2 --stack-yaml=${STACK_FILE} build --test --no-run-tests
+        command: stack -j2 --stack-yaml=${STACK_FILE} build --test --no-run-tests
     
     - run: find ~/.stack/ -maxdepth 4 -ls
     - run: find .stack-work -maxdepth 4 -ls
