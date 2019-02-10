@@ -49,7 +49,7 @@ import qualified Haskell.Ide.Engine.Scheduler            as Scheduler
 import           Haskell.Ide.Engine.Types
 import           Haskell.Ide.Engine.LSP.CodeActions
 import           Haskell.Ide.Engine.LSP.Reactor
-import qualified Haskell.Ide.Engine.Plugin.HaRe          as HaRe
+-- import qualified Haskell.Ide.Engine.Plugin.HaRe          as HaRe
 import qualified Haskell.Ide.Engine.Plugin.GhcMod        as GhcMod
 import qualified Haskell.Ide.Engine.Plugin.ApplyRefact   as ApplyRefact
 import qualified Haskell.Ide.Engine.Plugin.Brittany      as Brittany
@@ -412,12 +412,13 @@ reactor inp diagIn = do
           -}
 
           -- TODO: Register all commands?
-          hareId <- mkLspCmdId "hare" "demote"
+          -- hareId <- mkLspCmdId "hare" "demote"
           let
             options = J.object ["documentSelector" .= J.object [ "language" .= J.String "haskell"]]
             registrationsList =
-              [ J.Registration hareId J.WorkspaceExecuteCommand (Just options)
-              ]
+              []
+              -- [ J.Registration hareId J.WorkspaceExecuteCommand (Just options)
+              -- ]
           let registrations = J.RegistrationParams (J.List registrationsList)
 
           -- Do not actually register a command, but keep the code in
@@ -524,12 +525,12 @@ reactor inp diagIn = do
 
         ReqRename req -> do
           liftIO $ U.logs $ "reactor:got RenameRequest:" ++ show req
-          let (params, doc, pos) = reqParams req
-              newName  = params ^. J.newName
-              callback = reactorSend . RspRename . Core.makeResponseMessage req
-          let hreq = GReq tn (Just doc) Nothing (Just $ req ^. J.id) callback
-                       $ HaRe.renameCmd' doc pos newName
-          makeRequest hreq
+          -- let (params, doc, pos) = reqParams req
+          --     newName  = params ^. J.newName
+          --     callback = reactorSend . RspRename . Core.makeResponseMessage req
+          -- let hreq = GReq tn (Just doc) Nothing (Just $ req ^. J.id) callback
+          --              $ HaRe.renameCmd' doc pos newName
+          -- makeRequest hreq
 
 
         -- -------------------------------

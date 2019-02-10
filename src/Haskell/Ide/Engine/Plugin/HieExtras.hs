@@ -12,6 +12,7 @@ module Haskell.Ide.Engine.Plugin.HieExtras
   , getReferencesInDoc
   , getModule
   , findDef
+  , hsNamessRdr
   , showName
   , safeTyThingId
   , PosPrefixInfo(..)
@@ -33,6 +34,7 @@ import           Control.Monad.Reader
 import           Data.Aeson
 import qualified Data.Aeson.Types                             as J
 import           Data.Char
+import qualified Data.Generics                                as SYB
 import           Data.IORef
 import qualified Data.List                                    as List
 import qualified Data.Map                                     as Map
@@ -62,18 +64,29 @@ import           HscTypes
 import qualified Language.Haskell.LSP.VFS                     as VFS
 import qualified Language.Haskell.LSP.Types                   as J
 import qualified Language.Haskell.LSP.Types.Lens              as J
-import           Language.Haskell.Refact.API                 (showGhc)
-import           Language.Haskell.Refact.Utils.MonadFunctions
+-- import           Language.Haskell.Refact.API                 (showGhc)
+-- import           Language.Haskell.Refact.Utils.MonadFunctions
 import           Name
 import           Outputable                                   (Outputable)
 import qualified Outputable                                   as GHC
 import qualified DynFlags                                     as GHC
+import qualified OccName                                      as GHC
+import qualified Module                                       as GHC
 import           Packages
 import           SrcLoc
 import           TcEnv
 import           Type
 import           Var
+import           Unique
 import qualified Yi.Rope as Yi
+
+
+showGhc :: Outputable a => a -> String
+showGhc = GHC.showPpr GHC.unsafeGlobalDynFlags
+
+gfromJust :: String -> Maybe a -> a
+gfromJust _info (Just h) = h
+gfromJust  info Nothing = error $ "gfromJust " ++ info ++ " Nothing"
 
 -- ---------------------------------------------------------------------
 
@@ -89,6 +102,83 @@ newtype NameMapData = NMD
 
 invert :: (Ord v) => Map.Map k v -> Map.Map v [k]
 invert m = Map.fromListWith (++) [(v,[k]) | (k,v) <- Map.toList m]
+
+initRdrNameMap :: GHC.TypecheckedModule -> Map.Map SrcSpan Name
+initRdrNameMap tm = r
+  where
+    parsed  = GHC.pm_parsed_source $ GHC.tm_parsed_module tm
+    renamed = GHC.tm_renamed_source tm
+    typechecked = GHC.tm_typechecked_source tm
+
+    checkRdr :: GHC.Located GHC.RdrName -> Maybe [(GHC.SrcSpan,GHC.RdrName)]
+    checkRdr (GHC.L l n@(GHC.Unqual _)) = Just [(l,n)]
+    checkRdr (GHC.L l n@(GHC.Qual _ _)) = Just [(l,n)]
+    checkRdr (GHC.L _ _)= Nothing
+
+    checkName :: GHC.Located GHC.Name -> Maybe [GHC.Located GHC.Name]
+    checkName ln = Just [ln]
+
+    rdrNames = gfromJust "initRdrNameMap" $ SYB.everything mappend (nameSybQuery checkRdr ) parsed
+    names1   = gfromJust "initRdrNameMap" $ SYB.everything mappend (nameSybQuery checkName) renamed
+    names2 = names1 ++ SYB.everything (++) ([] `SYB.mkQ` fieldOcc
+                                              `SYB.extQ` hsRecFieldN) renamed
+    names  = names2 ++ SYB.everything (++) ([] `SYB.mkQ` hsRecFieldT) typechecked
+
+    fieldOcc :: GHC.FieldOcc GhcRn -> [GHC.Located GHC.Name]
+    fieldOcc (GHC.FieldOcc n (GHC.L l _)) = [(GHC.L l n)]
+    fieldOcc _ = []
+
+    hsRecFieldN :: GHC.LHsExpr GhcRn -> [GHC.Located GHC.Name]
+    hsRecFieldN (GHC.L _ (GHC.HsRecFld _ (GHC.Unambiguous n (GHC.L l _) ) )) = [GHC.L l n]
+    hsRecFieldN _ = []
+
+    hsRecFieldT :: GHC.LHsExpr GhcTc -> [GHC.Located GHC.Name]
+    hsRecFieldT (GHC.L _ (GHC.HsRecFld _ (GHC.Ambiguous n (GHC.L l _)) )) = [GHC.L l (Var.varName n)]
+    hsRecFieldT _ = []
+
+    namesIe = names
+
+    nameMap = Map.fromList $ map (\(GHC.L l n) -> (l,n)) namesIe
+
+    -- If the name does not exist (e.g. a TH Splice that has been expanded, make a new one)
+    -- No attempt is made to make sure that equivalent ones have equivalent names.
+    lookupName' l n i = case Map.lookup l nameMap of
+      Just v -> v
+      Nothing -> case n of
+                   GHC.Unqual u -> mkNewGhcNamePure 'h' i Nothing  (GHC.occNameString u)
+                   GHC.Qual q u -> mkNewGhcNamePure 'h' i (Just (GHC.Module (GHC.stringToUnitId "") q)) (GHC.occNameString u)
+                   _            -> error "initRdrNameMap:should not happen"
+
+    r = Map.fromList $ map (\((l,n),i) -> (l,lookupName' l n i)) $ zip rdrNames [1..]
+
+-- |Get all the names in the given syntax element
+hsNamessRdr :: (SYB.Data t) => t -> [GHC.Located GHC.RdrName]
+hsNamessRdr t = List.nub $ fromMaybe [] r
+  where
+     r = (SYB.everything mappend (inName) t)
+
+     checker :: GHC.Located GHC.RdrName -> Maybe [GHC.Located GHC.RdrName]
+     checker x = Just [x]
+
+     inName :: (SYB.Typeable a) => a -> Maybe [GHC.Located GHC.RdrName]
+     inName = nameSybQuery checker
+
+nameSybQuery :: (SYB.Typeable a, SYB.Typeable t)
+             => (GHC.Located a -> Maybe r) -> t -> Maybe r
+nameSybQuery checker = q
+  where
+    q = Nothing `SYB.mkQ`  worker
+
+    worker (pnt :: (GHC.Located a))
+      = checker pnt
+
+mkNewGhcNamePure :: Char -> Int -> Maybe GHC.Module -> String -> GHC.Name
+mkNewGhcNamePure c i maybeMod name =
+  let un = mkUnique c i -- H for HaRe :)
+      n = case maybeMod of
+               Nothing   -> mkInternalName un      (GHC.mkVarOcc name) GHC.noSrcSpan
+               Just modu -> mkExternalName un modu (GHC.mkVarOcc name) GHC.noSrcSpan
+  in n
 
 instance ModuleCache NameMapData where
   cacheDataProducer tm _ = pure $ NMD inm
@@ -511,14 +601,11 @@ getReferencesInDoc uri pos =
                     defnInSameFile =
                       (unpackFS <$> srcSpanFileName_maybe defn) == cfile
                     makeDocHighlight :: SrcSpan -> Maybe J.DocumentHighlight
-                    makeDocHighlight spn = do
+                    makeDocHighlight spn@(RealSrcSpan rspn) =
                       let kind = if spn == defn then J.HkWrite else J.HkRead
-                      let
-                        foo (Left _) = Nothing
-                        foo (Right r) = Just r
-                      r <- foo $ srcSpan2Range spn
-                      r' <- oldRangeToNew info r
-                      return $ J.DocumentHighlight r' (Just kind)
+                          r = oldRangeToNew info (realSrcSpan2Range rspn)
+                        in J.DocumentHighlight <$> r <*> pure (Just kind)
+                    makeDocHighlight (UnhelpfulSpan _) = Nothing
                     highlights
                       |    isVarOcc (occName name)
                         && defnInSameFile = mapMaybe makeDocHighlight (defn : usages)
@@ -545,7 +632,7 @@ getModule df n = do
 -- | Return the definition
 findDef :: Uri -> Position -> IdeDeferM (IdeResult [Location])
 findDef uri pos = pluginGetFile "findDef: " uri $ \file ->
-  withCachedInfo file (IdeResultOk []) (\info -> do
+  withCachedInfo file (IdeResultOk []) $ \info -> do
     let rfm = revMap info
         lm = locMap info
         mm = moduleMap info
@@ -555,25 +642,17 @@ findDef uri pos = pluginGetFile "findDef: " uri $ \file ->
       Just ((_,mn):_) -> gotoModule rfm mn
       _ -> case symbolFromTypecheckedModule lm =<< oldPos of
         Nothing -> return $ IdeResultOk []
-        Just (_, n) ->
-          case nameSrcSpan n of
-            UnhelpfulSpan _ -> return $ IdeResultOk []
-            realSpan   -> do
-              res <- srcSpan2Loc rfm realSpan
-              case res of
-                Right l@(J.Location luri range) ->
-                  case uriToFilePath luri of
+        Just (_, n) -> do
+          el <- srcSpan2Loc rfm (nameSrcSpan n)
+          case el of
+            Left _ -> return $ IdeResultOk []
+            Right l@(J.Location luri range) ->
+              case uriToFilePath luri of
+                Nothing -> return $ IdeResultOk [l]
+                Just fp -> ifCachedModule fp (IdeResultOk [l]) $ \(_ :: ParsedModule) info' ->
+                  case oldRangeToNew info' range of
+                    Just r  -> return $ IdeResultOk [J.Location luri r]
                     Nothing -> return $ IdeResultOk [l]
-                    Just fp -> ifCachedModule fp (IdeResultOk [l]) $ \(_ :: ParsedModule) info' ->
-                      case oldRangeToNew info' range of
-                        Just r  -> return $ IdeResultOk [J.Location luri r]
-                        Nothing -> return $ IdeResultOk [l]
-                Left x -> do
-                  debugm "findDef: name srcspan not found/valid"
-                  pure (IdeResultFail
-                        (IdeError PluginError
-                                  ("hare:findDef" <> ": \"" <> x <> "\"")
-                                  Null)))
   where
     gotoModule :: (FilePath -> FilePath) -> ModuleName -> IdeDeferM (IdeResult [Location])
     gotoModule rfm mn = do
@@ -588,7 +667,7 @@ findDef uri pos = pluginGetFile "findDef: " uri $ \file ->
             flushFinderCaches env
             findImportedModule env mn Nothing
           case fr of
-            Found (ModLocation (Just src) _ _) _ -> do
+            Found (ModLocation (Just src) _ _ _hiefile) _ -> do
               fp <- reverseMapFile rfm src
 
               let r = Range (Position 0 0) (Position 0 0)

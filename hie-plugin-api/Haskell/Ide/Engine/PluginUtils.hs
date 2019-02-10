@@ -74,16 +74,16 @@ oldRangeToNew info (Range start end) = do
   end'   <- oldPosToNew info end
   return (Range start' end')
 
-getRealSrcSpan :: SrcSpan -> Either T.Text RealSrcSpan
-getRealSrcSpan (RealSrcSpan r)   = Right r
-getRealSrcSpan (UnhelpfulSpan x) = Left $ T.pack $ unpackFS x
+extractRealSrcSpan :: SrcSpan -> Either T.Text RealSrcSpan
+extractRealSrcSpan (RealSrcSpan r)   = Right r
+extractRealSrcSpan (UnhelpfulSpan x) = Left $ T.pack $ unpackFS x
 
 realSrcSpan2Range :: RealSrcSpan -> Range
 realSrcSpan2Range = uncurry Range . unpackRealSrcSpan
 
 srcSpan2Range :: SrcSpan -> Either T.Text Range
 srcSpan2Range spn =
-  realSrcSpan2Range <$> getRealSrcSpan spn
+  realSrcSpan2Range <$> extractRealSrcSpan spn
 
 reverseMapFile :: MonadIO m => (FilePath -> FilePath) -> FilePath -> m FilePath
 reverseMapFile rfm fp = do
@@ -101,7 +101,7 @@ srcSpan2Loc revMapp spn = runExceptT $ do
     foo :: (Monad m) => Either T.Text RealSrcSpan -> ExceptT T.Text m RealSrcSpan
     foo (Left  e) = throwE e
     foo (Right v) = pure v
-  rspan <- foo $ getRealSrcSpan spn
+  rspan <- foo $ extractRealSrcSpan spn
   let fp = unpackFS $ srcSpanFile rspan
   debugm $ "srcSpan2Loc: mapped file is " ++ fp
   file <- reverseMapFile revMapp fp

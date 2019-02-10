@@ -100,6 +100,8 @@ version =
 
 -- ---------------------------------------------------------------------
 
+#define VERSION_ghc "8.6.3"
+
 hieGhcDisplayVersion :: String
 hieGhcDisplayVersion = compilerName ++ "-" ++ VERSION_ghc
 

@@ -4,11 +4,12 @@ packages:
 - hie-plugin-api
 
 extra-deps:
-- ./submodules/HaRe
+# - ./submodules/HaRe
 - ./submodules/brittany
 - ./submodules/cabal-helper
 - ./submodules/ghc-mod
 - ./submodules/ghc-mod/core
+# - ./submodules/haddock
 
 - butcher-1.3.2.1
 - cabal-plan-0.4.0.0
@@ -24,12 +25,13 @@ extra-deps:
 - syz-0.2.0.0
 - temporary-1.2.1.1
 - yaml-0.8.32
+- ghc-lib-0.20190204
 
 flags:
-  haskell-ide-engine:
-    pedantic: true
-  hie-plugin-api:
-    pedantic: true
+  # haskell-ide-engine:
+    # pedantic: true
+  # hie-plugin-api:
+    # pedantic: true
 
 # allow-newer: true
 

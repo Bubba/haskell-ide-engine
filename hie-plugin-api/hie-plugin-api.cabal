@@ -39,7 +39,7 @@ library
                      , filepath
                      , fingertree
                      , free
-                     , ghc
+                     , ghc-lib >= 0.20190204
                      , ghc-mod-core >= 5.9.0.0
                      , haskell-lsp >= 0.8
                      , hslogger

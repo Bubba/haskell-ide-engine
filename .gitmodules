@@ -32,3 +32,6 @@
 	url = https://github.com/alanz/ghc-mod.git
 
 
+[submodule "submodules/haddock"]
+	path = submodules/haddock
+	url = https://github.com/haskell/haddock.git

@@ -31,7 +31,7 @@ library
                        Haskell.Ide.Engine.Plugin.Example2
                        Haskell.Ide.Engine.Plugin.Fuzzy
                        Haskell.Ide.Engine.Plugin.GhcMod
-                       Haskell.Ide.Engine.Plugin.HaRe
+                      --  Haskell.Ide.Engine.Plugin.HaRe
                        Haskell.Ide.Engine.Plugin.Haddock
                        Haskell.Ide.Engine.Plugin.HieExtras
                        Haskell.Ide.Engine.Plugin.HfaAlign
@@ -47,7 +47,7 @@ library
   other-modules:       Paths_haskell_ide_engine
   build-depends:       Cabal >= 1.22
                      , Diff
-                     , HaRe
+                    --  , HaRe
                      , aeson
                      , apply-refact
                      , async
@@ -61,7 +61,7 @@ library
                      , directory
                      , filepath
                      , fold-debounce
-                     , ghc >= 8.0.1
+                     , ghc-lib >= 0.20190204
                      , ghc-exactprint
                      , ghc-mod >= 5.9.0.0
                      , ghc-mod-core >= 5.9.0.0
@@ -85,6 +85,7 @@ library
                      , safe
                      , sorted-list >= 0.2.1.0
                      , stm
+                     , syb
                      , tagsoup
                      , text
                      , transformers

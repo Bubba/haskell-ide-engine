@@ -28,7 +28,7 @@ import           Haskell.Ide.Engine.Plugin.Brittany
 import           Haskell.Ide.Engine.Plugin.Build
 import           Haskell.Ide.Engine.Plugin.Example2
 import           Haskell.Ide.Engine.Plugin.GhcMod
-import           Haskell.Ide.Engine.Plugin.HaRe
+-- import           Haskell.Ide.Engine.Plugin.HaRe
 import           Haskell.Ide.Engine.Plugin.Haddock
 import           Haskell.Ide.Engine.Plugin.HfaAlign
 import           Haskell.Ide.Engine.Plugin.Hoogle
@@ -53,7 +53,7 @@ plugins includeExamples = pluginDescToIdePlugins allPlugins
       , buildPluginDescriptor "build"
       , ghcmodDescriptor      "ghcmod"
       , haddockDescriptor     "haddock"
-      , hareDescriptor        "hare"
+      -- , hareDescriptor        "hare"
       , hoogleDescriptor      "hoogle"
       , hsimportDescriptor    "hsimport"
       , liquidDescriptor      "liquid"
