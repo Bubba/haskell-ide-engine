@@ -101,6 +101,7 @@ library
   if flag(pedantic)
      ghc-options:      -Werror
   default-language:    Haskell2010
+  c-sources:          leak-test/foo.c
 
 executable hie
   hs-source-dirs:      app
@@ -115,7 +116,7 @@ executable hie
                      , hslogger
                      , optparse-simple
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Wredundant-constraints -g3 -debug
-                       -with-rtsopts=-T
+                       -with-rtsopts=-T -optl-Wl,-u,_findPtr -v2
   if flag(pedantic)
      ghc-options:      -Werror
   default-language:    Haskell2010
@@ -146,7 +147,6 @@ executable leak-test
   build-tool-depends: haskell-ide-engine:hie
   build-depends:      base
                     , lsp-test == 0.5.3.*
-  ghc-options:        -g3 -debug
   default-language:   Haskell2010
 
 library hie-test-utils

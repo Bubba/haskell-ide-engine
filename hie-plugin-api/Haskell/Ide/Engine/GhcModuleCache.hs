@@ -48,8 +48,8 @@ uriCacheState UriCacheSuccess{} = "UriCacheSuccess"
 
 data UriCache = UriCache
   { cachedInfo   :: !CachedInfo
-  , cachedPsMod  :: !ParsedModule
-  , cachedTcMod  :: !(Maybe TypecheckedModule)
+  , cachedPsMod  :: ParsedModule
+  , cachedTcMod  :: (Maybe TypecheckedModule)
   -- | Data pertaining to the typechecked module,
   -- not the parsed module
   , cachedData   :: !(Map.Map TypeRep Dynamic)
