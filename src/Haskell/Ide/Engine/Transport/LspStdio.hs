@@ -808,6 +808,7 @@ withDocumentContents reqId uri f = do
         "Document was not open"
     Just (VFS.VirtualFile _ txt _) -> f (Rope.toText txt)
 
+
 -- | Get the currently configured formatter provider.
 -- The currently configured formatter provider is defined in @Config@ by PluginId.
 --

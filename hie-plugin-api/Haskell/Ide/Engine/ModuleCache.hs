@@ -139,16 +139,16 @@ getCradle fp k = do
       k (lookupCradle canon_fp mcache)
 
 ifCachedInfo :: (HasGhcModuleCache m, MonadIO m) => FilePath -> a -> (CachedInfo -> m a) -> m a
-ifCachedInfo fp def callback = return def --do
-  -- muc <- getUriCache fp
-  -- case muc of
-  --   Just (UriCacheSuccess _ uc) -> callback (cachedInfo uc)
-  --   _ -> return def
+ifCachedInfo fp def callback = do
+  muc <- getUriCache fp
+  case muc of
+    Just (UriCacheSuccess _ uc) -> callback (cachedInfo uc)
+    _ -> return def
 
 withCachedInfo :: FilePath -> a -> (CachedInfo -> IdeDeferM a) -> IdeDeferM a
-withCachedInfo fp def callback = return def -- deferIfNotCached fp go
-  -- where go (UriCacheSuccess _ uc) = callback (cachedInfo uc)
-  --       go UriCacheFailed = return def
+withCachedInfo fp def callback = deferIfNotCached fp go
+  where go (UriCacheSuccess _ uc) = callback (cachedInfo uc)
+        go UriCacheFailed = return def
 
 ifCachedModule :: (HasGhcModuleCache m, MonadIO m, CacheableModule b) => FilePath -> a -> (b -> CachedInfo -> m a) -> m a
 ifCachedModule fp def callback = ifCachedModuleM fp (return def) callback
@@ -161,19 +161,19 @@ ifCachedModule fp def callback = ifCachedModuleM fp (return def) callback
 -- see also 'withCachedModule'.
 ifCachedModuleM :: (HasGhcModuleCache m, MonadIO m, CacheableModule b)
                 => FilePath -> m a -> (b -> CachedInfo -> m a) -> m a
-ifCachedModuleM fp k callback = k -- do
-  -- muc <- getUriCache fp
-  -- let x = do
-  --       res <- muc
-  --       case res of
-  --         UriCacheSuccess _ uc -> do
-  --           let ci = cachedInfo uc
-  --           cm <- fromUriCache uc
-  --           return (ci, cm)
-  --         UriCacheFailed -> Nothing
-  -- case x of
-  --   Just (ci, cm) -> callback cm ci
-  --   Nothing -> k
+ifCachedModuleM fp k callback = do
+  muc <- getUriCache fp
+  let x = do
+        res <- muc
+        case res of
+          UriCacheSuccess _ uc -> do
+            let ci = cachedInfo uc
+            cm <- fromUriCache uc
+            return (ci, cm)
+          UriCacheFailed -> Nothing
+  case x of
+    Just (ci, cm) -> callback cm ci
+    Nothing -> k
 
 -- | Calls the callback with the cached module and data for the provided path.
 -- Otherwise returns the default immediately if there is no cached module
@@ -182,14 +182,14 @@ ifCachedModuleM fp k callback = k -- do
 -- see also 'withCachedModuleAndData'.
 ifCachedModuleAndData :: forall a b m. (ModuleCache a, HasGhcModuleCache m, MonadIO m, MonadMTState IdeState m)
                       => FilePath -> b -> (GHC.TypecheckedModule -> CachedInfo -> a -> m b) -> m b
-ifCachedModuleAndData fp def callback = return def -- do
-  -- muc <- getUriCache fp
-  -- case muc of
-  --   Just (UriCacheSuccess _ uc@(UriCache info _ (Just tm) dat _)) ->
-  --     case fromUriCache uc of
-  --       Just modul -> lookupCachedData fp tm info dat >>= callback modul (cachedInfo uc)
-  --       Nothing -> return def
-  --   _ -> return def
+ifCachedModuleAndData fp def callback = do
+  muc <- getUriCache fp
+  case muc of
+    Just (UriCacheSuccess _ uc@(UriCache info _ (Just tm) dat _)) ->
+      case fromUriCache uc of
+        Just modul -> lookupCachedData fp tm info dat >>= callback modul (cachedInfo uc)
+        Nothing -> return def
+    _ -> return def
 
 -- | Calls the callback with the cached module for the provided path.
 -- If there is no cached module immediately available, it will call the callback once
@@ -199,12 +199,12 @@ ifCachedModuleAndData fp def callback = return def -- do
 -- If you don't want to wait until a cached module is available,
 -- see also 'ifCachedModule'.
 withCachedModule :: CacheableModule b => FilePath -> a -> (b -> CachedInfo -> IdeDeferM a) -> IdeDeferM a
-withCachedModule fp def callback = return def -- deferIfNotCached fp go
-  -- where go (UriCacheSuccess _ uc@(UriCache _ _ _ _ _)) =
-  --         case fromUriCache uc of
-  --           Just modul -> callback modul (cachedInfo uc)
-  --           Nothing -> wrap (Defer fp go)
-  --       go UriCacheFailed = return def
+withCachedModule fp def callback = deferIfNotCached fp go
+  where go (UriCacheSuccess _ uc@(UriCache _ _ _ _ _)) =
+          case fromUriCache uc of
+            Just modul -> callback modul (cachedInfo uc)
+            Nothing -> wrap (Defer fp go)
+        go UriCacheFailed = return def
 
 -- | Calls its argument with the CachedModule for a given URI
 -- along with any data that might be stored in the ModuleCache.
@@ -218,10 +218,10 @@ withCachedModuleAndData :: forall a b. (ModuleCache a)
                         => FilePath -> b
                         -> (GHC.TypecheckedModule -> CachedInfo -> a -> IdeDeferM b) -> IdeDeferM b
 withCachedModuleAndData fp def callback = return def -- deferIfNotCached fp go
-  -- where go (UriCacheSuccess _ (uc@(UriCache info _ (Just tm) dat _))) =
-  --         lookupCachedData fp tm info dat >>= callback tm (cachedInfo uc)
-  --       go (UriCacheSuccess l (UriCache { cachedTcMod = Nothing })) = wrap (Defer fp go)
-  --       go UriCacheFailed = return def
+  where go (UriCacheSuccess _ (uc@(UriCache info _ (Just tm) dat _))) =
+          lookupCachedData fp tm info dat >>= callback tm (cachedInfo uc)
+        go (UriCacheSuccess l (UriCache { cachedTcMod = Nothing })) = wrap (Defer fp go)
+        go UriCacheFailed = return def
 
 getUriCache :: (HasGhcModuleCache m, MonadIO m) => FilePath -> m (Maybe UriCacheResult)
 getUriCache fp = do
@@ -307,7 +307,6 @@ cacheModule fp modul = do
   modifyCache $ \gmc ->
       gmc { uriCaches = Map.insert canonical_fp res (uriCaches gmc) }
 
-  liftIO $ hPutStrLn stderr "cacheModule"
   -- check leaks
   case maybeOldUc of
     Just (UriCacheSuccess (Leakable tcptr psptr) _) -> do
@@ -320,7 +319,7 @@ cacheModule fp modul = do
           hPutStrLn stderr "LEAKING!!!!"
           threadDelay $ 10000 * 10^6
           -- error $ "leaking: " <> canonical_fp
-        Nothing -> error $ "not leaking: " <> canonical_fp
+        Nothing -> liftIO $ hPutStrLn stderr $ "not leaking: " <> canonical_fp
     Nothing -> return ()
 
   -- execute any queued actions for the module

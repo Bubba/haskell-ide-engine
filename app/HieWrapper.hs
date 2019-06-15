@@ -98,7 +98,7 @@ run opts = do
       args <- getArgs
       logm $ "args:" ++ show args
       logm "launching ....\n\n\n"
-      callProcess e args
+      callProcess e $ ["+RTS", "-hT", "-i5", "-V5", "-RTS"] <> args
       logm "done"
 
 -- ---------------------------------------------------------------------

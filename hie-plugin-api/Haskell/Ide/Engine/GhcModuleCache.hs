@@ -33,8 +33,8 @@ data Leakable = Leakable
 
 mkLeakable :: UriCache -> IO UriCacheResult
 mkLeakable uc@(UriCache { cachedTcMod = tcmod, cachedPsMod = psmod }) = do
-  tcptr <- mkWeakPtr tcmod (Just (hPutStrLn stderr "garbage collected typechecked module"))
-  psptr <- mkWeakPtr psmod (Just (hPutStrLn stderr "garbage collected parsed module"))
+  tcptr <- mkWeakPtr tcmod Nothing
+  psptr <- mkWeakPtr psmod Nothing
   return (UriCacheSuccess (Leakable tcptr psptr) uc)
 
 type UriCaches = Map.Map FilePath UriCacheResult
