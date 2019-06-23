@@ -48,6 +48,11 @@ import           Haskell.Ide.Engine.GhcModuleCache
 import           Haskell.Ide.Engine.MultiThreadState
 import           Haskell.Ide.Engine.PluginsIdeMonads
 
+import System.Mem
+import System.Mem.Weak
+import System.IO
+import Control.Concurrent
+
 -- ---------------------------------------------------------------------
 
 modifyCache :: (HasGhcModuleCache m) => (GhcModuleCache -> GhcModuleCache) -> m ()
@@ -101,12 +106,12 @@ ifCachedInfo :: (HasGhcModuleCache m, GM.MonadIO m) => FilePath -> a -> (CachedI
 ifCachedInfo fp def callback = do
   muc <- getUriCache fp
   case muc of
-    Just (UriCacheSuccess uc) -> callback (cachedInfo uc)
+    Just (UriCacheSuccess _ uc) -> callback (cachedInfo uc)
     _ -> return def
 
 withCachedInfo :: FilePath -> a -> (CachedInfo -> IdeDeferM a) -> IdeDeferM a
 withCachedInfo fp def callback = deferIfNotCached fp go
-  where go (UriCacheSuccess uc) = callback (cachedInfo uc)
+  where go (UriCacheSuccess _ uc) = callback (cachedInfo uc)
         go UriCacheFailed = return def
 
 -- | Calls the callback with the cached module for the provided path.
@@ -122,7 +127,7 @@ ifCachedModule fp def callback = do
   let x = do
         res <- muc
         case res of
-          UriCacheSuccess uc -> do
+          UriCacheSuccess _ uc -> do
             let ci = cachedInfo uc
             cm <- fromUriCache uc
             return (ci, cm)
@@ -141,7 +146,7 @@ ifCachedModuleAndData :: forall a b m. (ModuleCache a, HasGhcModuleCache m, GM.M
 ifCachedModuleAndData fp def callback = do
   muc <- getUriCache fp
   case muc of
-    Just (UriCacheSuccess uc@(UriCache info _ (Just tm) dat)) ->
+    Just (UriCacheSuccess _ uc@(UriCache info _ (Just tm) dat)) ->
       case fromUriCache uc of
         Just modul -> lookupCachedData fp tm info dat >>= callback modul (cachedInfo uc)
         Nothing -> return def
@@ -156,7 +161,7 @@ ifCachedModuleAndData fp def callback = do
 -- see also 'ifCachedModule'.
 withCachedModule :: CacheableModule b => FilePath -> a -> (b -> CachedInfo -> IdeDeferM a) -> IdeDeferM a
 withCachedModule fp def callback = deferIfNotCached fp go
-  where go (UriCacheSuccess uc@(UriCache _ _ _ _)) =
+  where go (UriCacheSuccess _ uc@(UriCache _ _ _ _)) =
           case fromUriCache uc of
             Just modul -> callback modul (cachedInfo uc)
             Nothing -> wrap (Defer fp go)
@@ -174,9 +179,9 @@ withCachedModuleAndData :: forall a b. (ModuleCache a)
                         => FilePath -> b
                         -> (GHC.TypecheckedModule -> CachedInfo -> a -> IdeDeferM b) -> IdeDeferM b
 withCachedModuleAndData fp def callback = deferIfNotCached fp go
-  where go (UriCacheSuccess (uc@(UriCache info _ (Just tm) dat))) =
+  where go (UriCacheSuccess _ (uc@(UriCache info _ (Just tm) dat))) =
           lookupCachedData fp tm info dat >>= callback tm (cachedInfo uc)
-        go (UriCacheSuccess (UriCache _ _ Nothing _)) = wrap (Defer fp go)
+        go (UriCacheSuccess _ (UriCache _ _ Nothing _)) = wrap (Defer fp go)
         go UriCacheFailed = return def
 
 getUriCache :: (HasGhcModuleCache m, MonadIO m) => FilePath -> m (Maybe UriCacheResult)
@@ -202,8 +207,8 @@ lookupCachedData fp tm info dat = do
       val <- cacheDataProducer tm info
       let dat' = Map.insert (typeOf val) (toDyn val) dat
           newUc = UriCache info (GHC.tm_parsed_module tm) (Just tm) dat'
-      modifyCache (\s -> s {uriCaches = Map.insert fp' (UriCacheSuccess newUc)
-                                                  (uriCaches s)})
+      res <- liftIO $ mkUriCacheSuccess newUc
+      modifyCache (\s -> s {uriCaches = Map.insert fp' res (uriCaches s)})
       return val
 
     Just x ->
@@ -224,7 +229,7 @@ cacheModule uri modul = do
         muc <- getUriCache uri'
         let defInfo = CachedInfo mempty mempty mempty mempty rfm return return
         return $ case muc of
-          Just (UriCacheSuccess uc) ->
+          Just (UriCacheSuccess _ uc) ->
             let newCI = (cachedInfo uc) { revMap = rfm }
               in uc { cachedPsMod = pm, cachedInfo = newCI }
           _ -> UriCache defInfo pm Nothing mempty
@@ -235,9 +240,22 @@ cacheModule uri modul = do
             pm = GHC.tm_parsed_module tm
         return $ UriCache info pm (Just tm) mempty
 
-  let res = UriCacheSuccess newUc
+  res <- liftIO $ mkUriCacheSuccess newUc
+
+  maybeOldUc <- Map.lookup uri' . uriCaches <$> getModuleCache 
+
   modifyCache $ \gmc ->
       gmc { uriCaches = Map.insert uri' res (uriCaches gmc) }
+
+  -- check leaks
+  case maybeOldUc of
+    Just (UriCacheSuccess wkPtr _) -> liftIO $ do
+      liftIO performGC
+      derefed <- deRefWeak wkPtr
+      case derefed of
+        Just _ -> error "Leaking!" --hPutStrLn stderr "Leaking!" >> threadDelay (5000000 * 10^6)
+        Nothing -> hPutStrLn stderr "Not leaking"
+    _ -> return ()
 
   -- execute any queued actions for the module
   runDeferredActions uri' res
@@ -290,7 +308,7 @@ cacheInfoNoClear uri ci = do
     )
   where
     updateCachedInfo :: UriCacheResult -> UriCacheResult
-    updateCachedInfo (UriCacheSuccess old) = UriCacheSuccess (old { cachedInfo = ci })
+    updateCachedInfo (UriCacheSuccess x old) = UriCacheSuccess x (old { cachedInfo = ci })
     updateCachedInfo UriCacheFailed        = UriCacheFailed
 
 -- | Deletes a module from the cache

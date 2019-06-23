@@ -15,12 +15,20 @@ import           GHC                               (TypecheckedModule, ParsedMod
 import Haskell.Ide.Engine.ArtifactMap
 
 import Language.Haskell.LSP.Types
+import System.Mem.Weak
 
 type UriCaches = Map.Map FilePath UriCacheResult
 
-data UriCacheResult = UriCacheSuccess UriCache
+data UriCacheResult = UriCacheSuccess (Weak UriCache) UriCache
                     | UriCacheFailed
-  deriving (Show)
+instance Show UriCacheResult where
+  show _ = ""
+
+mkUriCacheSuccess :: UriCache -> IO UriCacheResult
+mkUriCacheSuccess uc = do
+  -- second arg is callback when GC is run
+  ptr <- mkWeakPtr uc Nothing
+  return (UriCacheSuccess ptr uc)
 
 uriCacheState :: UriCacheResult -> String
 uriCacheState UriCacheFailed    = "UriCacheFailed"
